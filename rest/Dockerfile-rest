@@ -1,0 +1,11 @@
+FROM python:3.9-alpine
+LABEL MAINTAINER="Carter Andrew"
+
+# Copy over needed files
+WORKDIR /srv
+COPY requirements.txt /srv
+RUN pip install --no-cache-dir -r requirements.txt
+COPY rest-server.py /srv
+
+# Run the Flask server
+CMD ["python3", "rest-server.py"]
