@@ -2,10 +2,10 @@ VERSION=v1
 DOCKERUSER=carterjamesandrew
 
 build:
-	docker build -f Dockerfile-rest -t demucs-rest .
+	docker build -f Dockerfile-rest -t vigui-rest .
 
 push:
-	docker tag demucs-rest $(DOCKERUSER)/demucs-rest:$(VERSION)
-	docker push $(DOCKERUSER)/demucs-rest:$(VERSION)
-	docker tag demucs-rest $(DOCKERUSER)/demucs-rest:latest
-	docker push $(DOCKERUSER)/demucs-rest:latest
+	docker tag vigui-rest $(DOCKERUSER)/vigui-rest:$(VERSION)
+	docker push $(DOCKERUSER)/vigui-rest:$(VERSION)
+	docker tag vigui-rest $(DOCKERUSER)/vigui-rest:latest
+	docker push $(DOCKERUSER)/vigui-rest:latest
