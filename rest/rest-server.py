@@ -39,7 +39,6 @@ def getQueue():
         queue = [item.decode('utf-8') for item in queue_data]
         return Response(jsonpickle.encode(queue), status=200)
     except Exception as e:
-        redisClient.lpush("log_queue", str(e).encode('utf-8'))
         return Response("An error occurred", status=500)
 
 # Get queue for jobs being processed and their progress
@@ -47,9 +46,9 @@ def getQueue():
 def getStatus():
     try:
         queue_data = redisClient.hgetall("progress")
-        return Response(queue_data, status=200)
+        decoded_data = {key.decode('utf-8'): value.decode('utf-8') for key, value in queue_data.items()}
+        return Response(decoded_data, status=200)
     except Exception as e:
-        redisClient.lpush("log_queue", str(e).encode('utf-8'))
         return Response("An error occurred", status=500)
 
 # Get all items in the minio buket for debugging purposes
@@ -57,13 +56,11 @@ def getStatus():
 def pushToBucket():
     try:
         if not minioClient.bucket_exists(minioBucket):
-            redisClient.lpush("log_queue", "Making bucket".encode('utf-8'))
             minioClient.make_bucket(minioBucket)
         # Convert list_objects result to a list of object names for response
         items = [obj.object_name for obj in minioClient.list_objects(minioBucket, recursive=True)]
         return Response(jsonpickle.encode(items), status=200)
     except Exception as e:
-        redisClient.lpush("log_queue", str(e).encode('utf-8'))
         return Response("An error occurred", status=500)
 
 # Method for posting a new job or deleting a existing job
