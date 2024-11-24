@@ -29,16 +29,10 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
 def hello():
-    return '<h1> Music Separation Server</h1><p> Use a valid endpoint </p>'
-# Simple test route that adds a message to our logs
-@app.route('/api/test/<message>', methods=['GET'])
-def enqueueAudio(message):
-    # Push to a logging queue (assuming queue name is 'log_queue')
-    redisClient.lpush("log_queue", message.encode('utf-8'))
-    return Response(f"Message '{message}' pushed to Redis log queue.", status=200)
+    return '<h1>API for VIGUI</h1><p> Use a valid endpoint </p>'
 
 # Get queue items for the worker in rest
-@app.route('/apiv1/queue', methods=['GET'])
+@app.route('/api/queue', methods=['GET'])
 def getQueue():
     try:
         queue_data = redisClient.lrange("toWorker", 0, -1)
@@ -48,8 +42,18 @@ def getQueue():
         redisClient.lpush("log_queue", str(e).encode('utf-8'))
         return Response("An error occurred", status=500)
 
-# Simple test for hot-reloading deployment
-@app.route('/apiv1/minio', methods=['GET'])
+# Get queue for jobs being processed and their progress
+@app.route('/api/status', methods=['GET'])
+def getStatus():
+    try:
+        queue_data = redisClient.hgetall("progress")
+        return Response(queue_data, status=200)
+    except Exception as e:
+        redisClient.lpush("log_queue", str(e).encode('utf-8'))
+        return Response("An error occurred", status=500)
+
+# Get all items in the minio buket for debugging purposes
+@app.route('/api/minio', methods=['GET'])
 def pushToBucket():
     try:
         if not minioClient.bucket_exists(minioBucket):
@@ -62,56 +66,57 @@ def pushToBucket():
         redisClient.lpush("log_queue", str(e).encode('utf-8'))
         return Response("An error occurred", status=500)
 
-# Simple test for hot-reloading deployment
-@app.route('/apiv1/separate', methods=['post'])
+# Method for posting a new job or deleting a existing job
+@app.route('/api/jobs', methods=['POST', 'DELETE'])
 def enqueuetrack():
     try:
+        # Make the mino bucket if it does not exist
         if not minioClient.bucket_exists(minioBucket):
-            redisClient.lpush("log_queue", "Making bucket".encode('utf-8'))
             minioClient.make_bucket(minioBucket)
-
-        # Get and process the request
-        data = request.get_json()
-        audioTrack = base64.b64decode(data['mp3'])
-        callback = data['callback']
-        fileId = hashlib.sha256(audioTrack).hexdigest()[:20]
-
-        # Upload audio track to MinIO
-        minioClient.put_object(
-            minioBucket,
-            f'{fileId}.mp3',
-            io.BytesIO(audioTrack),
-            length=len(audioTrack),
-            content_type='audio/mpeg'
-        )
-
-        # Add to Redis queue with encoded data
-        queue_item = {'hash': str(fileId), 'callback': callback}
-        queue_string = jsonpickle.encode(queue_item).encode('utf-8')
-        redisClient.lpush("toWorker", queue_string)
-        # TODO: Add second queue for completion consistency
-        # Return response
-        return Response(jsonpickle.encode({'hash': str(fileId), 'reason': 'Song enqueued for separation'}), status=200)
+        if request.method == 'POST':
+            # Get our JSON data from our post body and decode video
+            data = request.get_json()
+            videoFile = base64.b64decode(data['video'])
+            # Generate unique ID for the job
+            fileId = str(hashlib.sha256(videoFile).hexdigest()[:20])
+            # Upload video to our bucket
+            minioClient.put_object(
+                minioBucket,
+                f'inputs/{fileId}.mp4',
+                io.BytesIO(videoFile),
+                length=len(videoFile),
+                content_type='video/mp4'
+            )
+            # Add job to Redis queue for workers to digest
+            redisClient.lpush("toWorker", fileId)
+            # Also create entry for status updates
+            status_item= {'status': 'Queued', 'progress': 0}
+            status_string = jsonpickle.encode(status_item).encode('utf-8')
+            redisClient.hset('progress', fileId, status_string)
+            return Response(jsonpickle.encode({'hash': fileId}), status=200)
+        if request.method == 'DELETE':
+            return Response('Failed because not implimented', status=500)
     except Exception as e:
-        redisClient.lpush("log_queue", str(e).encode('utf-8'))
         return Response("An error occurred", status=500)
 
-# Route for fetching processed tracks
-@app.route('/apiv1/track/<trackHash>/<trackType>', methods=['GET', 'DELETE'])
-def fetchTrack(trackHash, trackType):
+# Route for fetching the videos we have generated
+# Will throw and return error if the video has not been processed
+@app.route('/api/video/<videoHash>', methods=['GET', 'DELETE'])
+def fetchVideo(videoHash):
     try:
-        objectLocation = f'results/{trackHash}/{trackType}.mp3'
+        objectLocation = f'results/{videoHash}.mp4'
         if request.method == 'GET':
             file = minioClient.get_object(minioBucket, objectLocation)
             fileBytes = BytesIO(file.read())
-            return send_file(fileBytes, mimetype='audio/mpeg', as_attachment=True, download_name=f"{trackHash}_{trackType}.mp3")
+            return send_file(fileBytes, mimetype='video/mp4', as_attachment=True, download_name=f"{videoHash}.mp4")
+        # Else we have sent a delete request and we should remove our item
         minioClient.remove_object(minioBucket, objectLocation)
-        return Response(f'Deleted track {trackType} for song {trackHash}', status=200)
+        # TODO: Delete the input as well as the results!!
+        # NOTE: Actually do this inside our worker
+        return Response(f'Deleted job {videoHash} results', status=200)
     except Exception as e:
-        redisClient.lpush("log_queue", str(e).encode('utf-8'))
         return Response("An error occurred", status=500)
 
 # Run server if main
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
-
