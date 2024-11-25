@@ -46,8 +46,8 @@ def getQueue():
 def getStatus():
     try:
         queue_data = redisClient.hgetall("progress")
-        decoded_data = {key.decode('utf-8'): value.decode('utf-8') for key, value in queue_data.items()}
-        return Response(decoded_data, status=200)
+        decoded_data = {key.decode('utf-8'): jsonpickle.decode(value.decode('utf-8')) for key, value in queue_data.items()}
+        return Response(jsonpickle.encode(decoded_data), status=200)
     except Exception as e:
         return Response("An error occurred", status=500)
 
