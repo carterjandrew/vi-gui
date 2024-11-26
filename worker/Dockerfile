@@ -9,7 +9,7 @@ ENTRYPOINT []
 WORKDIR /srv
 COPY requirements.txt /srv
 RUN pip install --no-cache-dir -r requirements.txt
-COPY fake-worker.py /srv
+COPY worker.py /srv
 
 # Run the Flask server
-CMD ["python3", "fake-worker.py"]
+CMD ["python3", "worker.py"]

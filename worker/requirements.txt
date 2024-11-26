@@ -1,3 +1,7 @@
 redis
 jsonpickle
 minio
+loguru
+opencv_python
+scipy
+tensorboard
