@@ -5,9 +5,9 @@ import redis
 from minio import Minio
 import jsonpickle
 from io import BytesIO
+from uprnet.interp_video import interp_video
 import torch
 # Import our nn framework
-from urpnet.interp_video import interp_video
 
 
 ##

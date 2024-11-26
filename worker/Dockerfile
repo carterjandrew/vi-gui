@@ -10,6 +10,7 @@ WORKDIR /srv
 COPY requirements.txt /srv
 RUN pip install --no-cache-dir -r requirements.txt
 COPY worker.py /srv
+COPY uprnet /srv/uprnet
 
 # Run the Flask server
 CMD ["python3", "worker.py"]
