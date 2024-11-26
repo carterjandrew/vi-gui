@@ -2,9 +2,9 @@ VERSION=v1
 DOCKERUSER=carterjamesandrew
 
 build:
-	docker build -f Dockerfile -t demucs-worker .
+	docker build -f Dockerfile -t vigui-worker .
 push:
-	docker tag demucs-worker $(DOCKERUSER)/demucs-worker:$(VERSION)
-	docker push $(DOCKERUSER)/demucs-worker:$(VERSION)
-	docker tag demucs-worker $(DOCKERUSER)/demucs-worker:latest
-	docker push $(DOCKERUSER)/demucs-worker:latest
+	docker tag vigui-worker $(DOCKERUSER)/vigui-worker:$(VERSION)
+	docker push $(DOCKERUSER)/vigui-worker:$(VERSION)
+	docker tag vigui-worker $(DOCKERUSER)/vigui-worker:latest
+	docker push $(DOCKERUSER)/vigui-worker:latest

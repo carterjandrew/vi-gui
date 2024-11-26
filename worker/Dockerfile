@@ -1,5 +1,5 @@
 # Extend the base image
-FROM xserrat/facebook-demucs
+FROM cnstark/pytorch:2.3.0-py3.10.15-cuda12.1.0-ubuntu22.04
 LABEL MAINTAINER="Carter Andrew"
 
 # Override the entrypoint
@@ -9,7 +9,7 @@ ENTRYPOINT []
 WORKDIR /srv
 COPY requirements.txt /srv
 RUN pip install --no-cache-dir -r requirements.txt
-COPY worker.py /srv
+COPY fake-worker.py /srv
 
 # Run the Flask server
-CMD ["python3", "worker.py"]
+CMD ["python3", "fake-worker.py"]

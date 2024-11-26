@@ -1,5 +1,3 @@
 redis
 jsonpickle
 minio
-soundfile
-torch

@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: worker
-        image: carterjamesandrew/demucs-worker:latest
+        image: carterjamesandrew/vigui-worker:latest
         resources:
           requests:
             cpu: 400m

@@ -5,7 +5,6 @@ import redis
 from minio import Minio
 import jsonpickle
 from io import BytesIO
-import soundfile as sf
 import torch
 
 
@@ -33,15 +32,15 @@ os.makedirs('outputs', exist_ok=True)
 
 while True:
     try:
-        hash = redisClient.blpop("toWorker", timeout=0)
-        if not hash: 
+        work = redisClient.blpop("toWorker", timeout=0)
+        if not work: 
             continue
-
+        hash = work[len(work) - 1].decode('utf-8')
         downloadLocation = f'inputs/{hash}.mp4'
         outputsLocation = f'outputs/{hash}.mp4'
         print(f"Found work for item {hash}")
         if not os.path.isfile(downloadLocation):
-            minioClient.fget_object(minioBucket, downloadLocation, downloadLocation)
+            videoFile = minioClient.fget_object(minioBucket, downloadLocation, downloadLocation)
         if os.path.isfile(downloadLocation):
             status_item = {'status': 'Starting', 'progress': 0}
             status_string = jsonpickle.encode(status_item).encode('utf-8')
@@ -60,7 +59,7 @@ while True:
             minioClient.put_object(
                 minioBucket,
                 downloadLocation,
-                io.BytesIO(videoFile),
+                videoFile,
                 length=len(videoFile),
                 content_type='video/mp4'
             )
