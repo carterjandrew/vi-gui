@@ -40,13 +40,14 @@ while True:
         outputsLocation = f'outputs/{hash}.mp4'
         print(f"Found work for item {hash}")
         if not os.path.isfile(downloadLocation):
-            videoFile = minioClient.fget_object(minioBucket, downloadLocation, downloadLocation)
+            minioClient.fget_object(minioBucket, downloadLocation, downloadLocation)
         if os.path.isfile(downloadLocation):
             status_item = {'status': 'Starting', 'progress': 0}
             status_string = jsonpickle.encode(status_item).encode('utf-8')
             redisClient.hset('progress', hash, status_string)
-            for i in range(100):
-                status_item = {'status': 'Generating', 'progress': i}
+            # Preform work
+            for i in range(10):
+                status_item = {'status': 'Generating', 'progress': i* 10}
                 status_string = jsonpickle.encode(status_item).encode('utf-8')
                 redisClient.hset('progress', hash, status_string)
                 time.sleep(1)
@@ -56,11 +57,10 @@ while True:
             status_string = jsonpickle.encode(status_item).encode('utf-8')
             redisClient.hset('progress', hash, status_string)
 
-            minioClient.put_object(
-                minioBucket,
-                downloadLocation,
-                videoFile,
-                length=len(videoFile),
+            minioClient.fput_object(
+                bucket_name=minioBucket,
+                file_path=downloadLocation,
+                object_name=downloadLocation,
                 content_type='video/mp4'
             )
 
