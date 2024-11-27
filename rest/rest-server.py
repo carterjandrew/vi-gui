@@ -2,6 +2,7 @@ import sys
 import os
 import redis
 from flask import Flask, request, Response, send_file
+from flask_cors import CORS, cross_origin
 from minio import Minio
 import jsonpickle
 import io
@@ -26,8 +27,11 @@ minioClient = Minio(minioHost, secure=False, access_key=minioUser, secret_key=mi
 
 # Initialize the Flask app
 app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 @app.route('/', methods=['GET'])
+@cross_origin()
 def hello():
     return '<h1>API for VIGUI</h1><p> Use a valid endpoint </p>'
 
@@ -43,6 +47,7 @@ def getQueue():
 
 # Get queue for jobs being processed and their progress
 @app.route('/api/status', methods=['GET'])
+@cross_origin()
 def getStatus():
     try:
         queue_data = redisClient.hgetall("progress")
@@ -53,6 +58,7 @@ def getStatus():
 
 # Get all items in the minio buket for debugging purposes
 @app.route('/api/minio', methods=['GET'])
+@cross_origin()
 def pushToBucket():
     try:
         if not minioClient.bucket_exists(minioBucket):
@@ -65,6 +71,7 @@ def pushToBucket():
 
 # Method for posting a new job or deleting a existing job
 @app.route('/api/jobs', methods=['POST', 'DELETE'])
+@cross_origin()
 def enqueuetrack():
     try:
         # Make the mino bucket if it does not exist
@@ -99,6 +106,7 @@ def enqueuetrack():
 # Route for fetching the videos we have generated
 # Will throw and return error if the video has not been processed
 @app.route('/api/video/<videoHash>', methods=['GET', 'DELETE'])
+@cross_origin()
 def fetchVideo(videoHash):
     try:
         objectLocation = f'results/{videoHash}.mp4'
