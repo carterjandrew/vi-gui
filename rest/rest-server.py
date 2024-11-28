@@ -9,6 +9,8 @@ import io
 import base64
 import hashlib
 from io import BytesIO
+import secrets
+import bcrypt
 
 # Initialize the Redis client
 redisHost = os.getenv("REDIS_HOST") or "localhost"
@@ -34,6 +36,47 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 @cross_origin()
 def hello():
     return '<h1>API for VIGUI</h1><p> Use a valid endpoint </p>'
+
+# A very very bad way to handle authentication
+@app.route('/api/login', methods=['POST'])
+@cross_origin()
+def login():
+    data = request.get_json()
+    email = data['email']
+    password = data['password']
+    passwordStore = redisClient.hget('passwords', email)
+    if passwordStore == None:
+        return Response("No such user", status=404)
+    if not bcrypt.checkpw(password.encode('utf-8'), passwordStore):
+        return Response("Incorrect password", status=401)
+    token = redisClient.hget('tokenFromEmail', email)
+    return Response(jsonpickle.encode({
+        'email': email,
+        'token': token
+    }), status=200)
+
+# A very very bad way to handle sign up for auth
+@app.route('/api/signup', methods=['POST'])
+@cross_origin()
+def signup():
+    data = request.get_json()
+    email = data['email']
+    password = data['password']
+    token = redisClient.hget('tokensFromEmail', email)
+    if token != None:
+        return Response("User allready exists", status=401)
+    token = secrets.token_hex(32)
+    # Hash the password to keep users info safe
+    hashed_pw = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    # Push email, password, and tokens to redis
+    redisClient.hset('emailFromToken', token, email)
+    redisClient.hset('passwords', email, hashed_pw)
+    redisClient.hset('tokenFromEmail', email, token)
+    # Respond to user with authenticated values
+    return Response(jsonpickle.encode({
+        'email': email,
+        'token': token
+    }), status=200)
 
 # Get queue items for the worker in rest
 @app.route('/api/queue', methods=['GET'])
