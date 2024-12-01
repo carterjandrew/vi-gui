@@ -1,8 +1,12 @@
-import { Box, Button, Card, Center, Code, Flex, Spinner, Table, Text } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { Box, Button, Card, Center, Code, Flex, Input, Spinner, Table, Text, VisuallyHidden } from "@chakra-ui/react";
+import { useEffect, useRef, useState } from "react";
 import Auth, { AuthSession } from "./components/auth";
-import { FaDoorOpen, FaUpload, FaUser } from "react-icons/fa";
+import { FaDoorOpen, FaDownload, FaUpload, FaUser } from "react-icons/fa";
 import { apiClient } from "./functions/requests";
+import {
+	ProgressCircleRing,
+	ProgressCircleRoot,
+} from "@/components/ui/progress-circle"
 
 export type Status = {
 	status: string,
@@ -10,14 +14,39 @@ export type Status = {
 }
 
 export default function App() {
+	const inputRef = useRef<HTMLInputElement>(null)
 	const [authSession, setAuthSession] = useState<AuthSession>({
 		"email": "temp",
 		"token": "b2c0969f61523776fb6dbe5c3ae845e03d67b8c94284058c2bf17c39fc5dee80"
 	})
-	const [status, setStatus] = useState<Status[]>()
+	const [status, setStatus] = useState<Record<string, Status>>({
+		item1: { status: 'Complete', progress: 100 },
+		item2: { status: 'Processing', progress: 60 },
+		item3: { status: 'Processing', progress: 60 },
+		item4: { status: 'Processing', progress: 60 },
+		item5: { status: 'Processing', progress: 60 },
+		item6: { status: 'Processing', progress: 60 },
+		item7: { status: 'Processing', progress: 60 },
+		item8: { status: 'Processing', progress: 60 },
+		item9: { status: 'Processing', progress: 60 },
+		item10: { status: 'Processing', progress: 60 },
+		item11: { status: 'Processing', progress: 60 },
+		item12: { status: 'Processing', progress: 60 },
+		item13: { status: 'Processing', progress: 60 },
+		item14: { status: 'Processing', progress: 60 },
+		item15: { status: 'Processing', progress: 60 },
+		item16: { status: 'Processing', progress: 60 },
+		item17: { status: 'Processing', progress: 60 },
+		item18: { status: 'Processing', progress: 60 },
+		item19: { status: 'Processing', progress: 60 },
+		item20: { status: 'Processing', progress: 60 },
+		item21: { status: 'Processing', progress: 60 },
+		item22: { status: 'Processing', progress: 60 },
+		item23: { status: 'Processing', progress: 60 },
+	})
 
 	useEffect(() => {
-		apiClient.get<Status[]>('/api/status').then(r => setStatus(r.data))
+		//apiClient.get<Status[]>('/api/status').then(r => setStatus(r.data))
 	}, [authSession])
 
 	useEffect(() => {
@@ -27,7 +56,7 @@ export default function App() {
 		<Auth onAuth={(as) => setAuthSession(as)} />
 	)
 	return (
-		<Flex w='100vw' h='100vh' flexDir='column'>
+		<Flex w='100vw' h='100vh' maxW='100vw' maxH='100vh' flexDir='column'>
 			<Card.Root flexDir='row' borderRadius={0} alignItems='center' padding='3' gap={3}>
 				<Code fontSize='xl'>VIGIU</Code>
 				<Box flex={1} />
@@ -36,8 +65,8 @@ export default function App() {
 					<Text fontSize={17}>Log out of {authSession.email}</Text>
 				</Button>
 			</Card.Root>
-			<Center flex={1} w='100%' h='100%' flexDir='column' gap={3} padding={3}>
-				<Card.Root minW='600px' flex={1}>
+			<Center flex={1} w='100%' flexDir='column' gap={3} padding={3} minH={0}>
+				<Card.Root minW='600px' flex={1} minH={0}>
 					<Card.Header fontSize='xl'>Jobs</Card.Header>
 					<Card.Body maxH='100%' overflowY='scroll'>
 						{!status ? (
@@ -54,19 +83,37 @@ export default function App() {
 								<Table.Header>
 									<Table.Row>
 										<Table.ColumnHeader>Job Name</Table.ColumnHeader>
-										<Table.ColumnHeader>Status</Table.ColumnHeader>
-										<Table.ColumnHeader>Dowload Link</Table.ColumnHeader>
+										<Table.ColumnHeader textAlign='center'>Status</Table.ColumnHeader>
+										<Table.ColumnHeader textAlign='end'>Progress</Table.ColumnHeader>
 									</Table.Row>
 								</Table.Header>
 								<Table.Body>
+									{Object.entries(status).map(([key, value]) => (
+										<Table.Row key={key}>
+											<Table.Cell>{key}</Table.Cell>
+											<Table.Cell textAlign='center'>{value.status}</Table.Cell>
+											<Table.Cell textAlign='end'>
+												{value.progress == 100 ? (
+													<Button><FaDownload />Download Results</Button>
+												) : (
+													<ProgressCircleRoot value={value.progress} size='xs'>
+														<ProgressCircleRing cap='round' />
+													</ProgressCircleRoot>
+												)}
+											</Table.Cell>
+										</Table.Row>
+									))}
 								</Table.Body>
 							</Table.Root>
 						)}
 					</Card.Body>
 				</Card.Root>
-				<Button minW='600px'>
-				<FaUpload />
-				<Text fontSize={17}>Upload New Video</Text>
+				<VisuallyHidden>
+					<Input type='file' accept='video/*' ref={inputRef} />
+				</VisuallyHidden>
+				<Button minW='600px' onClick={() => inputRef.current?.click()}>
+					<FaUpload />
+					<Text fontSize={17}>Upload New Video</Text>
 				</Button>
 			</Center>
 		</Flex>

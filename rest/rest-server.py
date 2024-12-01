@@ -80,6 +80,7 @@ def signup():
 
 # Get queue items for the worker in rest
 @app.route('/api/queue', methods=['GET'])
+@cross_origin()
 def getQueue():
     try:
         queue_data = redisClient.lrange("toWorker", 0, -1)
