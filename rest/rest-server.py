@@ -123,8 +123,7 @@ def enqueuetrack():
             minioClient.make_bucket(minioBucket)
         if request.method == 'POST':
             # Get our JSON data from our post body and decode video
-            data = request.get_json()
-            videoFile = base64.b64decode(data['video'])
+            videoFile = request.files['video']
             # Generate unique ID for the job
             fileId = str(hashlib.sha256(videoFile).hexdigest()[:20])
             # Upload video to our bucket

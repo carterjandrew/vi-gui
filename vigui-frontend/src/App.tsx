@@ -1,4 +1,4 @@
-import { Box, Button, Card, Center, Code, Flex, Input, Spinner, Table, Text, VisuallyHidden } from "@chakra-ui/react";
+import { Box, Button, Card, Center, Code, Flex, Input, Spinner, Table, Text, Toaster, VisuallyHidden } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import Auth, { AuthSession } from "./components/auth";
 import { FaDoorOpen, FaDownload, FaUpload, FaUser } from "react-icons/fa";
@@ -7,6 +7,7 @@ import {
 	ProgressCircleRing,
 	ProgressCircleRoot,
 } from "@/components/ui/progress-circle"
+import { toaster } from '@/components/ui/toaster'
 
 export type Status = {
 	status: string,
@@ -19,34 +20,34 @@ export default function App() {
 		"email": "temp",
 		"token": "b2c0969f61523776fb6dbe5c3ae845e03d67b8c94284058c2bf17c39fc5dee80"
 	})
-	const [status, setStatus] = useState<Record<string, Status>>({
-		item1: { status: 'Complete', progress: 100 },
-		item2: { status: 'Processing', progress: 60 },
-		item3: { status: 'Processing', progress: 60 },
-		item4: { status: 'Processing', progress: 60 },
-		item5: { status: 'Processing', progress: 60 },
-		item6: { status: 'Processing', progress: 60 },
-		item7: { status: 'Processing', progress: 60 },
-		item8: { status: 'Processing', progress: 60 },
-		item9: { status: 'Processing', progress: 60 },
-		item10: { status: 'Processing', progress: 60 },
-		item11: { status: 'Processing', progress: 60 },
-		item12: { status: 'Processing', progress: 60 },
-		item13: { status: 'Processing', progress: 60 },
-		item14: { status: 'Processing', progress: 60 },
-		item15: { status: 'Processing', progress: 60 },
-		item16: { status: 'Processing', progress: 60 },
-		item17: { status: 'Processing', progress: 60 },
-		item18: { status: 'Processing', progress: 60 },
-		item19: { status: 'Processing', progress: 60 },
-		item20: { status: 'Processing', progress: 60 },
-		item21: { status: 'Processing', progress: 60 },
-		item22: { status: 'Processing', progress: 60 },
-		item23: { status: 'Processing', progress: 60 },
-	})
+	const [status, setStatus] = useState<Record<string, Status>>()
+
+	const handleInputSubmit: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+		if (!e.target.files) return
+		const textencoder = new TextEncoder()
+		for (const file of e.target.files) {
+			const toast = toaster.create({
+				type: 'loading',
+				title: `Uploading ${file.name}`,
+				description: `Please be patient, your video is ${file.size} bytes big`,
+				action: {
+					label: 'Close',
+					onClick: () => undefined
+				}
+			})
+			const formdata = new FormData()
+			formdata.append('video', file)
+			apiClient.post('/api/jobs', formdata, {
+				headers: {
+					'Content-Type': 'multipart/form-data',
+					'Authorization': authSession.token
+				}
+			}).then(() => toaster.remove(toast))
+		}
+	}
 
 	useEffect(() => {
-		//apiClient.get<Status[]>('/api/status').then(r => setStatus(r.data))
+		apiClient.get<Record<string, Status>>('/api/status').then(r => setStatus(r.data))
 	}, [authSession])
 
 	useEffect(() => {
@@ -109,7 +110,7 @@ export default function App() {
 					</Card.Body>
 				</Card.Root>
 				<VisuallyHidden>
-					<Input type='file' accept='video/*' ref={inputRef} />
+					<Input multiple type='file' accept='video/*' ref={inputRef} onChange={handleInputSubmit} />
 				</VisuallyHidden>
 				<Button minW='600px' onClick={() => inputRef.current?.click()}>
 					<FaUpload />
