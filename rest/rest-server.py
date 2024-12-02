@@ -31,6 +31,7 @@ minioClient = Minio(minioHost, secure=False, access_key=minioUser, secret_key=mi
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
+app.config['MAX_CONTENT_LENGTH']=500*1024*720
 
 @app.route('/', methods=['GET'])
 @cross_origin()
