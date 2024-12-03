@@ -9,3 +9,9 @@ push:
 	docker push $(DOCKERUSER)/vigui-rest:$(VERSION)
 	docker tag vigui-rest $(DOCKERUSER)/vigui-rest:latest
 	docker push $(DOCKERUSER)/vigui-rest:latest
+
+dep:
+	kubectl delete -f rest-deployment.yaml
+	make build
+	make push
+	kubectl apply -f rest-deployment.yaml

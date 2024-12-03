@@ -18,3 +18,4 @@ push:
 	docker push $(DOCKERUSER)/demucs-logs:$(VERSION)
 	docker tag logs  $(DOCKERUSER)/demucs-logs:latest
 	docker push $(DOCKERUSER)/demucs-logs:latest
+

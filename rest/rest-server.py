@@ -31,7 +31,7 @@ minioClient = Minio(minioHost, secure=False, access_key=minioUser, secret_key=mi
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
-app.config['MAX_CONTENT_LENGTH']=500*1024*720
+app.config['MAX_CONTENT_LENGTH']=5000*1024*720
 
 @app.route('/', methods=['GET'])
 @cross_origin()
@@ -94,8 +94,17 @@ def getQueue():
 @app.route('/api/status', methods=['GET'])
 @cross_origin()
 def getStatus():
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return Response("Not authorized", status=401)
+    #email = redisClient.hget('emailFromToken', auth_header)
+    #if not email:
+        #return Response(f"Bad token: {email}", status=403)
+    return Response(
+        jsonpickle.encode({email: {'status': 'complte', 'progress': 100}})
+    )
     try:
-        queue_data = redisClient.hgetall("progress")
+        queue_data = redisClient.hgetall("emailFromToken")
         decoded_data = {key.decode('utf-8'): jsonpickle.decode(value.decode('utf-8')) for key, value in queue_data.items()}
         return Response(jsonpickle.encode(decoded_data), status=200)
     except Exception as e:
@@ -124,7 +133,7 @@ def enqueuetrack():
             minioClient.make_bucket(minioBucket)
         if request.method == 'POST':
             # Get our JSON data from our post body and decode video
-            videoFile = request.files['video']
+            videoFile = request.files['video'].read()
             # Generate unique ID for the job
             fileId = str(hashlib.sha256(videoFile).hexdigest()[:20])
             # Upload video to our bucket
@@ -145,6 +154,7 @@ def enqueuetrack():
         if request.method == 'DELETE':
             return Response('Failed because not implimented', status=500)
     except Exception as e:
+        app.logger.warning(f'ERROR: {e}')
         return Response("An error occurred", status=500)
 
 # Route for fetching the videos we have generated

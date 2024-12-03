@@ -1,7 +1,7 @@
-import { Box, Button, Card, Center, Code, Flex, Input, Spinner, Table, Text, Toaster, VisuallyHidden } from "@chakra-ui/react";
+import { Box, Button, Card, Center, Code, Flex, Input, Spinner, Table, Text, VisuallyHidden } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import Auth, { AuthSession } from "./components/auth";
-import { FaDoorOpen, FaDownload, FaUpload, FaUser } from "react-icons/fa";
+import { FaDoorOpen, FaDownload, FaUpload } from "react-icons/fa";
 import { apiClient } from "./functions/requests";
 import {
 	ProgressCircleRing,
@@ -24,7 +24,6 @@ export default function App() {
 
 	const handleInputSubmit: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
 		if (!e.target.files) return
-		const textencoder = new TextEncoder()
 		for (const file of e.target.files) {
 			const toast = toaster.create({
 				type: 'loading',
@@ -47,7 +46,18 @@ export default function App() {
 	}
 
 	useEffect(() => {
-		apiClient.get<Record<string, Status>>('/api/status').then(r => setStatus(r.data))
+		if (!authSession) return
+		const interval = setInterval(() => {
+			apiClient.get<Record<string, Status>>('/api/status', {
+				headers: {
+					Authorization: authSession.token
+				}
+			})
+				.then(r => setStatus(r.data))
+				.catch(e => console.log(e))
+		}, 5000)
+
+		return () => clearInterval(interval)
 	}, [authSession])
 
 	useEffect(() => {
