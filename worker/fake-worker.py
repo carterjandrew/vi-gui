@@ -35,7 +35,11 @@ while True:
         work = redisClient.blpop("toWorker", timeout=0)
         if not work: 
             continue
-        hash = work[len(work) - 1].decode('utf-8')
+        print(f'WORK: {work}')
+        job = jsonpickle.decode(work[len(work) - 1].decode('utf-8'))
+        print(f'JOB: {job}')
+        hash = job['id']
+        email = job['email']
         downloadLocation = f'inputs/{hash}.mp4'
         outputsLocation = f'outputs/{hash}.mp4'
         print(f"Found work for item {hash}")
@@ -49,8 +53,8 @@ while True:
             for i in range(10):
                 status_item = {'status': 'Generating', 'progress': i* 10}
                 status_string = jsonpickle.encode(status_item).encode('utf-8')
-                redisClient.hset('progress', hash, status_string)
-                time.sleep(1)
+                redisClient.hset(f'status_{email}', hash, status_string)
+                time.sleep(10)
             # Push to minio
 
             status_item = {'status': 'Storing', 'progress': 100}

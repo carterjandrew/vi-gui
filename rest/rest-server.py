@@ -97,17 +97,17 @@ def getStatus():
     auth_header = request.headers.get("Authorization")
     if not auth_header:
         return Response("Not authorized", status=401)
-    #email = redisClient.hget('emailFromToken', auth_header)
-    #if not email:
-        #return Response(f"Bad token: {email}", status=403)
-    return Response(
-        jsonpickle.encode({email: {'status': 'complte', 'progress': 100}})
-    )
+    email = redisClient.hget("emailFromToken", auth_header)
+    if not email:
+        return Response(f"Bad token: {email}", status=403)
     try:
-        queue_data = redisClient.hgetall("emailFromToken")
+        queue_data = redisClient.hgetall(f'status_{email}')
+        if not queue_data:
+            queue_data = {}
         decoded_data = {key.decode('utf-8'): jsonpickle.decode(value.decode('utf-8')) for key, value in queue_data.items()}
         return Response(jsonpickle.encode(decoded_data), status=200)
     except Exception as e:
+        app.logger.warning(f'ERROR: {e}')
         return Response("An error occurred", status=500)
 
 # Get all items in the minio buket for debugging purposes
@@ -127,6 +127,12 @@ def pushToBucket():
 @app.route('/api/jobs', methods=['POST', 'DELETE'])
 @cross_origin()
 def enqueuetrack():
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return Response("Not authorized", status=401)
+    email = redisClient.hget("emailFromToken", auth_header)
+    if not email:
+        return Response(f"Bad token: {email}", status=403)
     try:
         # Make the mino bucket if it does not exist
         if not minioClient.bucket_exists(minioBucket):
@@ -145,11 +151,12 @@ def enqueuetrack():
                 content_type='video/mp4'
             )
             # Add job to Redis queue for workers to digest
-            redisClient.lpush("toWorker", fileId)
+            job = jsonpickle.encode({'id': fileId, 'email': email})
+            redisClient.lpush("toWorker", job)
             # Also create entry for status updates
             status_item= {'status': 'Queued', 'progress': 0}
             status_string = jsonpickle.encode(status_item).encode('utf-8')
-            redisClient.hset('progress', fileId, status_string)
+            redisClient.hset(f'status_{email}', fileId, status_string)
             return Response(jsonpickle.encode({'hash': fileId}), status=200)
         if request.method == 'DELETE':
             return Response('Failed because not implimented', status=500)

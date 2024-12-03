@@ -16,10 +16,7 @@ export type Status = {
 
 export default function App() {
 	const inputRef = useRef<HTMLInputElement>(null)
-	const [authSession, setAuthSession] = useState<AuthSession>({
-		"email": "temp",
-		"token": "b2c0969f61523776fb6dbe5c3ae845e03d67b8c94284058c2bf17c39fc5dee80"
-	})
+	const [authSession, setAuthSession] = useState<AuthSession>()
 	const [status, setStatus] = useState<Record<string, Status>>()
 
 	const handleInputSubmit: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
