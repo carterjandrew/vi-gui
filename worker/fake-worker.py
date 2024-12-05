@@ -54,23 +54,23 @@ while True:
                 status_item = {'status': 'Generating', 'progress': i* 10}
                 status_string = jsonpickle.encode(status_item).encode('utf-8')
                 redisClient.hset(f'status_{email}', hash, status_string)
-                time.sleep(10)
+                time.sleep(1)
             # Push to minio
 
-            status_item = {'status': 'Storing', 'progress': 100}
+            status_item = {'status_{email}': 'Storing', 'progress': 100}
             status_string = jsonpickle.encode(status_item).encode('utf-8')
             redisClient.hset('progress', hash, status_string)
 
             minioClient.fput_object(
                 bucket_name=minioBucket,
                 file_path=downloadLocation,
-                object_name=downloadLocation,
+                object_name=outputsLocation,
                 content_type='video/mp4'
             )
 
             status_item = {'status': 'Complete', 'progress': 100}
             status_string = jsonpickle.encode(status_item).encode('utf-8')
-            redisClient.hset('progress', hash, status_string)
+            redisClient.hset('status_{email}', hash, status_string)
             # Clean up files
             # os.system(f"rm -rf {outputsLocation}")
             # os.system(f"rm -rf {downloadLocation}")

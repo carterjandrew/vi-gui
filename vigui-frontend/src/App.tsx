@@ -45,6 +45,7 @@ export default function App() {
 	useEffect(() => {
 		if (!authSession) return
 		const interval = setInterval(() => {
+			console.log("Auth session", authSession)
 			apiClient.get<Record<string, Status>>('/api/status', {
 				headers: {
 					Authorization: authSession.token

@@ -51,6 +51,8 @@ def login():
     if not bcrypt.checkpw(password.encode('utf-8'), passwordStore):
         return Response("Incorrect password", status=401)
     token = redisClient.hget('tokenFromEmail', email)
+    app.logger.warning(f'TOKEN: {token}')
+    token = token.decode('utf-8')
     return Response(jsonpickle.encode({
         'email': email,
         'token': token
