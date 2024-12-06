@@ -45,7 +45,6 @@ export default function App() {
 	useEffect(() => {
 		if (!authSession) return
 		const interval = setInterval(() => {
-			console.log("Auth session", authSession)
 			apiClient.get<Record<string, Status>>('/api/status', {
 				headers: {
 					Authorization: authSession.token
@@ -53,14 +52,11 @@ export default function App() {
 			})
 				.then(r => setStatus(r.data))
 				.catch(e => console.log(e))
-		}, 5000)
+		}, 500)
 
 		return () => clearInterval(interval)
 	}, [authSession])
 
-	useEffect(() => {
-		console.log(status)
-	}, [status])
 	if (!authSession) return (
 		<Auth onAuth={(as) => setAuthSession(as)} />
 	)
@@ -103,7 +99,9 @@ export default function App() {
 											<Table.Cell textAlign='center'>{value.status}</Table.Cell>
 											<Table.Cell textAlign='end'>
 												{value.progress == 100 ? (
-													<Button><FaDownload />Download Results</Button>
+													<a href={`http://${import.meta.env.VITE_API_ADDRESS}/api/video/${key}`}>
+													<Button ><FaDownload />Download Results</Button>
+													</a>
 												) : (
 													<ProgressCircleRoot value={value.progress} size='xs'>
 														<ProgressCircleRing cap='round' />

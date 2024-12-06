@@ -31,7 +31,7 @@ minioClient = Minio(minioHost, secure=False, access_key=minioUser, secret_key=mi
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
-app.config['MAX_CONTENT_LENGTH']=5000*1024*720
+app.config['MAX_CONTENT_LENGTH']=5000*1024*720*10000
 
 @app.route('/', methods=['GET'])
 @cross_origin()
@@ -172,7 +172,7 @@ def enqueuetrack():
 @cross_origin()
 def fetchVideo(videoHash):
     try:
-        objectLocation = f'results/{videoHash}.mp4'
+        objectLocation = f'outputs/{videoHash}.mp4'
         if request.method == 'GET':
             file = minioClient.get_object(minioBucket, objectLocation)
             fileBytes = BytesIO(file.read())
@@ -183,6 +183,7 @@ def fetchVideo(videoHash):
         # NOTE: Actually do this inside our worker
         return Response(f'Deleted job {videoHash} results', status=200)
     except Exception as e:
+        app.logger.warning(f'ERROR: {e}')
         return Response("An error occurred", status=500)
 
 # Run server if main

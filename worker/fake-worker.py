@@ -48,7 +48,7 @@ while True:
         if os.path.isfile(downloadLocation):
             status_item = {'status': 'Starting', 'progress': 0}
             status_string = jsonpickle.encode(status_item).encode('utf-8')
-            redisClient.hset('progress', hash, status_string)
+            redisClient.hset(f'status_{email}', hash, status_string)
             # Preform work
             for i in range(10):
                 status_item = {'status': 'Generating', 'progress': i* 10}
@@ -56,10 +56,12 @@ while True:
                 redisClient.hset(f'status_{email}', hash, status_string)
                 time.sleep(1)
             # Push to minio
+            print("Completed so wtf")
 
-            status_item = {'status_{email}': 'Storing', 'progress': 100}
+            status_item = {'status': 'Storing', 'progress': 100}
             status_string = jsonpickle.encode(status_item).encode('utf-8')
-            redisClient.hset('progress', hash, status_string)
+            redisClient.hset(f'status_{email}', hash, status_string)
+            print('Should change to storing')
 
             minioClient.fput_object(
                 bucket_name=minioBucket,
@@ -70,7 +72,8 @@ while True:
 
             status_item = {'status': 'Complete', 'progress': 100}
             status_string = jsonpickle.encode(status_item).encode('utf-8')
-            redisClient.hset('status_{email}', hash, status_string)
+            redisClient.hset(f'status_{email}', hash, status_string)
+            print('Should change to complete')
             # Clean up files
             # os.system(f"rm -rf {outputsLocation}")
             # os.system(f"rm -rf {downloadLocation}")
